@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import requests
 import mysql.connector
 
+# import json
+
 mydb = mysql.connector.connect(
     host="localhost",
     user="root",
@@ -11,6 +13,7 @@ mydb = mysql.connector.connect(
 )
 
 mycursor = mydb.cursor()
+
 
 url = "https://www.cert.ssi.gouv.fr"
 reponse = requests.get(url)
@@ -50,14 +53,40 @@ for i in range(len(linkRss)):
             count = count + 1
             #print(count)
             if 12 == count:
-                sql = "INSERT INTO cert (link,reference,titre,premVers,dernVers) VALUES ('%s' ,'%s' ,'%s' ,'%s' ,'%s');"
-                #mycursor.execute(sql % (linkCve,linkDescriptionCve[2], linkDescriptionCve[4] , linkDescriptionCve[6], linkDescriptionCve[8]))
-                print(linkDescriptionCve)
-                try:
-                    mycursor.execute(sql % (linkCve,linkDescriptionCve[2], linkDescriptionCve[4], linkDescriptionCve[6], linkDescriptionCve[8]))
-                    mydb.commit()
-                except:
-                    mydb.rollback()
+
+                sql = "SELECT reference FROM cert Where reference = '%s'"
+
+                mycursor.execute(sql % (linkDescriptionCve[2]))
+                rows = mycursor.fetchall()
+                results = len(rows)
+
+                if results == 0:
+                    sql = "INSERT INTO cert (link,reference,titre,premVers,dernVers) VALUES ('%s' ,'%s' ,'%s' ,'%s' ,'%s');"
+                    mycursor.execute(sql % (
+                    linkCve, linkDescriptionCve[2], linkDescriptionCve[4], linkDescriptionCve[6],
+                    linkDescriptionCve[8]))
+                    print(linkDescriptionCve)
+                    # data = {
+                    #
+                    #     {
+                    #         "id": "2702",
+                    #         "link": "test1",
+                    #         "reference": "test1",
+                    #         "titre": "test1",
+                    #         "premVers": "21 décembre 2000",
+                    #         "dernVers": "21 décembre 2000"
+                    #
+                    #     },
+                    #
+                    # }
+                    # with open('cert.json','w') as write_file:
+                    #      json.dump(linkDescriptionCve, write_file)
+                    try:
+                        mycursor.execute(sql % (
+                        linkCve, linkDescriptionCve[2], linkDescriptionCve[4], linkDescriptionCve[6],
+                        linkDescriptionCve[8]))
+                        mydb.commit()
+                    except:
+                        mydb.rollback()
+                print("supression disct")
                 del linkDescriptionCve[:]
-
-

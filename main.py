@@ -1,7 +1,7 @@
 import os
 from bottle import route, run, template, static_file, error, get, post, request
 import mysql.connector
-from sendMail import sendMail
+from sendMail import sendMailV2
 
 error404Html = '''<!DOCTYPE html>
                 <html lang="en">
@@ -190,8 +190,12 @@ def rss():
 def addMail():
     return template('mail.html')
 
+
 @post('/mailValidation')
 def mailValidation():
+    mail = request.forms.get('mail')
+    sendMailV2(mail)
+
     mydb = mysql.connector.connect(
         host="localhost",
         user="root",
@@ -199,16 +203,13 @@ def mailValidation():
         database="rss"
     )
     mycursor = mydb.cursor()
+    sql = "INSERT INTO user(mail) VALUE('%s')"
 
-    mail = request.forms.get('mail')
-    #
-    # sql = "INSERT INTO user(mail) VALUE (%s)"
-
-    sendMail(mail)
-
-    mycursor.execute("INSERT INTO user(mail) VALUE(mail)")
-
-    mydb.commit()
+    try:
+        mycursor.execute(sql % (mail))
+        mydb.commit()
+    except:
+        mydb.rollback()
 
     return template('mailValid', user=mail)
 
